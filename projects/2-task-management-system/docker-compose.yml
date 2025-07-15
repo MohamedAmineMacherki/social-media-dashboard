@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: task-management-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: taskmanagement
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - task-management-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task-management-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/taskmanagement
+      - JWT_SECRET=myTaskManagementSecretKey
+      - CORS_ALLOWED_ORIGINS=http://localhost:4200
+    depends_on:
+      - mongodb
+    networks:
+      - task-management-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task-management-frontend
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - task-management-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  task-management-network:
+    driver: bridge
